@@ -1,5 +1,7 @@
 import { useState } from "react"
 
+const API_BASE = "https://akv6kx5991.execute-api.us-east-1.amazonaws.com/prod"
+
 export default function Search() {
   const [team, setTeam] = useState("")
   const [data, setData] = useState(null)
@@ -10,7 +12,7 @@ export default function Search() {
     if (!team) return
 
     try {
-      const r = await fetch(`http://127.0.0.1:8000/sports?q=${team}`)
+      const r = await fetch(`${API_BASE}/sports?q=${team}`)
       const j = await r.json()
       setData(j)
       setInsights({})

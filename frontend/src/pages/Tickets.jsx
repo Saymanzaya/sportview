@@ -1,5 +1,7 @@
 import { useState } from "react"
 
+const API_BASE = "https://akv6kx5991.execute-api.us-east-1.amazonaws.com/prod"
+
 export default function Tickets() {
   const [query, setQuery] = useState("")
   const [data, setData] = useState(null)
@@ -15,7 +17,7 @@ export default function Tickets() {
     setData(null)
 
     try {
-      const r = await fetch(`http://127.0.0.1:8000/tickets?q=${query}`)
+      const r = await fetch(`${API_BASE}/tickets?q=${query}`)
       const j = await r.json()
       setData(j)
     } catch (error) {
