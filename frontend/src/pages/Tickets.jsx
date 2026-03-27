@@ -27,23 +27,8 @@ export default function Tickets() {
     }
   }
 
-  function getPriceColor(price) {
-    if (price == null) return "#777"
-    if (price <= 75) return "green"
-    if (price <= 150) return "orange"
-    return "red"
-  }
-
-  function getPriceLabel(price) {
-    if (price == null) return "Price unavailable"
-    if (price <= 75) return "Good Deal"
-    if (price <= 150) return "Fair Price"
-    return "Higher Price"
-  }
-
   async function getTicketRecommendation(event) {
-    const lowestPrice = event.priceRanges?.[0]?.min ?? null
-    setLoadingId(event.id)
+    setLoadingId(event.idEvent)
 
     try {
       const response = await fetch("http://127.0.0.1:8000/ticket-recommendation", {
@@ -52,13 +37,13 @@ export default function Tickets() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          event_name: event.name || "Unknown Event",
-          team_home: event.name?.split(" vs ")[0] || "Home Team",
-          team_away: event.name?.split(" vs ")[1] || "Away Team",
-          event_date: event.dates?.start?.localDate || "",
-          location: event._embedded?.venues?.[0]?.name || "Unknown Venue",
-          ticket_price: lowestPrice,
-          seat_section: "Upper Bowl",
+          event_name: event.strEvent || "Unknown Event",
+          team_home: event.strHomeTeam || "",
+          team_away: event.strAwayTeam || "",
+          event_date: event.dateEvent || "",
+          location: event.strVenue || "Unknown Venue",
+          ticket_price: null,
+          seat_section: "General",
           user_budget: "medium",
           user_preference:
             "Give a short, clean recommendation about whether this ticket seems worth checking out for a casual sports fan.",
@@ -69,21 +54,21 @@ export default function Tickets() {
 
       setRecommendations((prev) => ({
         ...prev,
-        [event.id]: {
+        [event.idEvent]: {
           text:
             result.recommendation ||
             result.result ||
             "No recommendation available.",
-          link: event.url || "",
+          link: event.strTicketURL || "",
         },
       }))
     } catch (error) {
       console.error("Recommendation error:", error)
       setRecommendations((prev) => ({
         ...prev,
-        [event.id]: {
+        [event.idEvent]: {
           text: "Error generating recommendation.",
-          link: event.url || "",
+          link: event.strTicketURL || "",
         },
       }))
     } finally {
@@ -91,7 +76,7 @@ export default function Tickets() {
     }
   }
 
-  const events = data?._embedded?.events || []
+  const events = data?.event || data?.events || []
 
   return (
     <div style={{ padding: 40 }}>
@@ -115,12 +100,11 @@ export default function Tickets() {
       )}
 
       {events.map((event) => {
-        const lowestPrice = event.priceRanges?.[0]?.min ?? null
-        const recommendation = recommendations[event.id]
+        const recommendation = recommendations[event.idEvent]
 
         return (
           <div
-            key={event.id}
+            key={event.idEvent}
             style={{
               marginTop: 20,
               padding: 20,
@@ -130,10 +114,10 @@ export default function Tickets() {
               maxWidth: 700,
             }}
           >
-            {event.images?.[0]?.url && (
+            {(event.strThumb || event.strBanner) && (
               <img
-                src={event.images[0].url}
-                alt={event.name}
+                src={event.strThumb || event.strBanner}
+                alt={event.strEvent}
                 style={{
                   width: "100%",
                   maxWidth: 300,
@@ -144,42 +128,30 @@ export default function Tickets() {
               />
             )}
 
-            <h3>{event.name}</h3>
+            <h3>{event.strEvent}</h3>
 
             <p>
-              <strong>Date:</strong> {event.dates?.start?.localDate || "N/A"}
-            </p>
-
-            <p>
-              <strong>Venue:</strong> {event._embedded?.venues?.[0]?.name || "N/A"}
+              <strong>Date:</strong> {event.dateEvent || "N/A"}
             </p>
 
             <p>
-              <strong>Lowest Price:</strong>{" "}
-              <span
-                style={{
-                  color: getPriceColor(lowestPrice),
-                  fontWeight: "bold",
-                }}
-              >
-                {lowestPrice !== null ? `$${lowestPrice}` : "Price not available"}
-              </span>
+              <strong>Venue:</strong> {event.strVenue || "N/A"}
             </p>
 
-            <p
-              style={{
-                marginTop: 5,
-                color: getPriceColor(lowestPrice),
-                fontWeight: "bold",
-              }}
-            >
-              {getPriceLabel(lowestPrice)}
+            <p>
+              <strong>League:</strong> {event.strLeague || "N/A"}
             </p>
 
-            {event.url && (
+            {event.strTime && (
+              <p>
+                <strong>Time:</strong> {event.strTime}
+              </p>
+            )}
+
+            {event.strTicketURL && (
               <p>
                 <a
-                  href={event.url}
+                  href={event.strTicketURL}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -192,7 +164,7 @@ export default function Tickets() {
               AI Ticket Recommendation
             </button>
 
-            {loadingId === event.id && (
+            {loadingId === event.idEvent && (
               <p style={{ marginTop: 15 }}>Generating recommendation...</p>
             )}
 
