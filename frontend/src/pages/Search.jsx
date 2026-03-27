@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 const API_BASE = "https://akv6kx5991.execute-api.us-east-1.amazonaws.com/prod"
+const AI_BASE = "http://127.0.0.1:8000"
 
 export default function Search() {
   const [team, setTeam] = useState("")
@@ -9,10 +10,10 @@ export default function Search() {
   const [insights, setInsights] = useState({})
 
   async function search() {
-    if (!team) return
+    if (!team.trim()) return
 
     try {
-      const r = await fetch(`${API_BASE}/sports?q=${team}`)
+      const r = await fetch(`${API_BASE}/sports?q=${encodeURIComponent(team)}`)
       const j = await r.json()
       setData(j)
       setInsights({})
@@ -25,7 +26,7 @@ export default function Search() {
     setLoadingId(teamId)
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/game-insight", {
+      const response = await fetch(`${AI_BASE}/game-insight`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -36,7 +37,7 @@ export default function Search() {
           event_date: "",
           location: leagueName || "Sports League",
           user_interest:
-            "Give me a short insight about this team, its identity, strengths, fan appeal, and why people should follow it.",
+            "Give a short, clean insight about this team, its identity, style, strengths, and fan appeal.",
         }),
       })
 
@@ -44,7 +45,7 @@ export default function Search() {
 
       setInsights((prev) => ({
         ...prev,
-        [teamId]: result.insight,
+        [teamId]: result.insight || result.result || "No insight available.",
       }))
     } catch (err) {
       console.error("Insight error:", err)
@@ -81,7 +82,7 @@ export default function Search() {
             border: "1px solid #ccc",
             borderRadius: 10,
             background: "#f9f9f9",
-            maxWidth: 600,
+            maxWidth: 700,
           }}
         >
           {t.strBadge && (
@@ -98,6 +99,7 @@ export default function Search() {
           )}
 
           <h3>{t.strTeam}</h3>
+
           <p>
             <strong>League:</strong> {t.strLeague}
           </p>

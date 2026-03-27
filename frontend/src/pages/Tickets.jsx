@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 const API_BASE = "https://akv6kx5991.execute-api.us-east-1.amazonaws.com/prod"
+const AI_BASE = "http://127.0.0.1:8000"
 
 export default function Tickets() {
   const [query, setQuery] = useState("")
@@ -17,7 +18,7 @@ export default function Tickets() {
     setData(null)
 
     try {
-      const r = await fetch(`${API_BASE}/tickets?q=${query}`)
+      const r = await fetch(`${API_BASE}/tickets?q=${encodeURIComponent(query)}`)
       const j = await r.json()
       setData(j)
     } catch (error) {
@@ -31,7 +32,7 @@ export default function Tickets() {
     setLoadingId(event.idEvent)
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ticket-recommendation", {
+      const response = await fetch(`${AI_BASE}/ticket-recommendation`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,7 +47,7 @@ export default function Tickets() {
           seat_section: "General",
           user_budget: "medium",
           user_preference:
-            "Give a short, clean recommendation about whether this ticket seems worth checking out for a casual sports fan.",
+            "Give a short recommendation about whether this event is worth attending.",
         }),
       })
 
@@ -59,7 +60,6 @@ export default function Tickets() {
             result.recommendation ||
             result.result ||
             "No recommendation available.",
-          link: event.strTicketURL || "",
         },
       }))
     } catch (error) {
@@ -68,7 +68,6 @@ export default function Tickets() {
         ...prev,
         [event.idEvent]: {
           text: "Error generating recommendation.",
-          link: event.strTicketURL || "",
         },
       }))
     } finally {
@@ -76,7 +75,22 @@ export default function Tickets() {
     }
   }
 
-  const events = data?.event || data?.events || []
+  const allEvents = data?.event || data?.events || []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const events = allEvents
+    .filter((event) => {
+      if (!event.dateEvent) return false
+      const eventDate = new Date(`${event.dateEvent}T00:00:00`)
+      return eventDate >= today
+    })
+    .sort((a, b) => {
+      const dateA = new Date(`${a.dateEvent}T00:00:00`)
+      const dateB = new Date(`${b.dateEvent}T00:00:00`)
+      return dateA - dateB
+    })
 
   return (
     <div style={{ padding: 40 }}>
@@ -96,7 +110,7 @@ export default function Tickets() {
       )}
 
       {data && events.length === 0 && !searchError && (
-        <p style={{ marginTop: 20 }}>No ticket results found.</p>
+        <p style={{ marginTop: 20 }}>No upcoming ticket results found.</p>
       )}
 
       {events.map((event) => {
@@ -114,9 +128,9 @@ export default function Tickets() {
               maxWidth: 700,
             }}
           >
-            {(event.strThumb || event.strBanner) && (
+            {(event.strThumb || event.strBanner || event.strPoster) && (
               <img
-                src={event.strThumb || event.strBanner}
+                src={event.strThumb || event.strBanner || event.strPoster}
                 alt={event.strEvent}
                 style={{
                   width: "100%",
@@ -129,6 +143,10 @@ export default function Tickets() {
             )}
 
             <h3>{event.strEvent}</h3>
+
+            <p style={{ color: "#555" }}>
+              {event.strHomeTeam} vs {event.strAwayTeam}
+            </p>
 
             <p>
               <strong>Date:</strong> {event.dateEvent || "N/A"}
@@ -148,21 +166,34 @@ export default function Tickets() {
               </p>
             )}
 
-            {event.strTicketURL && (
-              <p>
-                <a
-                  href={event.strTicketURL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Buy Tickets
-                </a>
-              </p>
-            )}
+            <a
+              href={
+                event.strTicketURL ||
+                `https://www.ticketmaster.com/search?q=${encodeURIComponent(
+                  event.strEvent
+                )}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block",
+                marginTop: 10,
+                padding: "10px 15px",
+                background: "#00c853",
+                color: "white",
+                borderRadius: 6,
+                textDecoration: "none",
+                fontWeight: "bold",
+              }}
+            >
+              Buy Tickets 🎟️
+            </a>
 
-            <button onClick={() => getTicketRecommendation(event)}>
-              AI Ticket Recommendation
-            </button>
+            <div style={{ marginTop: 15 }}>
+              <button onClick={() => getTicketRecommendation(event)}>
+                AI Ticket Recommendation
+              </button>
+            </div>
 
             {loadingId === event.idEvent && (
               <p style={{ marginTop: 15 }}>Generating recommendation...</p>
@@ -178,31 +209,13 @@ export default function Tickets() {
                   borderRadius: 10,
                 }}
               >
-                <h3 style={{ marginBottom: 10 }}>AI Ticket Recommendation</h3>
+                <h3 style={{ marginBottom: 10 }}>
+                  AI Ticket Recommendation
+                </h3>
 
                 <p style={{ whiteSpace: "pre-line", lineHeight: "1.6" }}>
                   {recommendation.text}
                 </p>
-
-                {recommendation.link && (
-                  <a
-                    href={recommendation.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "inline-block",
-                      marginTop: 15,
-                      padding: "10px 15px",
-                      background: "#00c853",
-                      color: "white",
-                      borderRadius: 6,
-                      textDecoration: "none",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Buy Tickets 🎟️
-                  </a>
-                )}
               </div>
             )}
           </div>
