@@ -1,15 +1,10 @@
-import ollama
+from openai import OpenAI
 
+client = OpenAI()
 
 def get_llm_response(prompt: str) -> str:
-    response = ollama.chat(
-        model="llama3.2",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
+    response = client.responses.create(
+        model="gpt-5.4",
+        input=prompt,
     )
-
-    return response["message"]["content"]
+    return response.output_text
