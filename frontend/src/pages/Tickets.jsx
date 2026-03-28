@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 const API_BASE = "https://akv6kx5991.execute-api.us-east-1.amazonaws.com/prod"
-const AI_BASE = "http://127.0.0.1:8000"
+// const AI_BASE = "http://127.0.0.1:8000"
 
 export default function Tickets() {
   const [query, setQuery] = useState("")
@@ -32,7 +32,7 @@ export default function Tickets() {
     setLoadingId(event.idEvent)
 
     try {
-      const response = await fetch(`${AI_BASE}/ticket-recommendation`, {
+      const response = await fetch(`${API_BASE}/ticket-recommendation`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
