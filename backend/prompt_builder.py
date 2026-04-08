@@ -13,7 +13,7 @@ Your job is to give a short, clean, and engaging team insight that feels natural
 Follow this EXACT structure:
 
 Team Overview:
-(1–2 sentences about the team’s reputation and history)
+(1-2 sentences about the team's reputation and history)
 
 Play Style:
 (1 sentence describing how they play)
@@ -37,6 +37,8 @@ Team: {team_home}
 League: {location}
 User Interest: {user_interest}
 """
+
+
 def create_ticket_recommendation_prompt(
     event_name: str,
     team_home: str,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import urlencode
 
-from mangum.handlers.utils import (
+from .utils import (
     get_server_and_port,
     handle_base64_response_body,
     handle_exclude_headers,
@@ -11,7 +11,7 @@ from mangum.handlers.utils import (
     maybe_encode_body,
     strip_api_gateway_path,
 )
-from mangum.types import (
+from ..types import (
     Headers,
     LambdaConfig,
     LambdaContext,

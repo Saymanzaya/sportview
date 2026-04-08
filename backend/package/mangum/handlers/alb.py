@@ -5,13 +5,13 @@ from itertools import islice
 from typing import Any
 from urllib.parse import unquote, unquote_plus, urlencode
 
-from mangum.handlers.utils import (
+from .utils import (
     get_server_and_port,
     handle_base64_response_body,
     handle_exclude_headers,
     maybe_encode_body,
 )
-from mangum.types import (
+from ..types import (
     LambdaConfig,
     LambdaContext,
     LambdaEvent,

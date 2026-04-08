@@ -4,7 +4,7 @@ import base64
 from typing import Any
 from urllib.parse import unquote
 
-from mangum.types import Headers, LambdaConfig
+from ..types import Headers, LambdaConfig
 
 
 def maybe_encode_body(body: str | bytes, *, is_base64: bool) -> bytes:

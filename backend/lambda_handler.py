@@ -1,4 +1,8 @@
-from mangum import Mangum
-from main import app
+try:
+    from mangum import Mangum
+except ImportError:
+    from package.mangum import Mangum
 
-handler = Mangum(app)
+from package.main import app
+
+handler = Mangum(app, lifespan="off")

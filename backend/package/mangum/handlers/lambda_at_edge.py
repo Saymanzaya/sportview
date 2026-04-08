@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from mangum.handlers.utils import (
+from .utils import (
     handle_base64_response_body,
     handle_exclude_headers,
     handle_multi_value_headers,
     maybe_encode_body,
 )
-from mangum.types import LambdaConfig, LambdaContext, LambdaEvent, Response, Scope
+from ..types import LambdaConfig, LambdaContext, LambdaEvent, Response, Scope
 
 
 class LambdaAtEdge:

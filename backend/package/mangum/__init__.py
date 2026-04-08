@@ -1,3 +1,3 @@
-from mangum.adapter import Mangum
+from .adapter import Mangum
 
 __all__ = ["Mangum"]

@@ -6,10 +6,10 @@ from contextlib import ExitStack
 from itertools import chain
 from typing import Any
 
-from mangum.exceptions import ConfigurationError
-from mangum.handlers import ALB, APIGateway, HTTPGateway, LambdaAtEdge
-from mangum.protocols import HTTPCycle, LifespanCycle
-from mangum.types import ASGI, LambdaConfig, LambdaContext, LambdaEvent, LambdaHandler, LifespanMode
+from .exceptions import ConfigurationError
+from .handlers import ALB, APIGateway, HTTPGateway, LambdaAtEdge
+from .protocols import HTTPCycle, LifespanCycle
+from .types import ASGI, LambdaConfig, LambdaContext, LambdaEvent, LambdaHandler, LifespanMode
 
 logger = logging.getLogger("mangum")
 

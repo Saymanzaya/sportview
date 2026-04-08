@@ -6,8 +6,8 @@ import logging
 from types import TracebackType
 from typing import Any
 
-from mangum.exceptions import LifespanFailure, LifespanUnsupported, UnexpectedMessage
-from mangum.types import ASGI, LifespanMode, Message
+from ..exceptions import LifespanFailure, LifespanUnsupported, UnexpectedMessage
+from ..types import ASGI, LifespanMode, Message
 
 
 class LifespanCycleState(enum.Enum):

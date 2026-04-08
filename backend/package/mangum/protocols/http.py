@@ -3,8 +3,8 @@ import enum
 import logging
 from io import BytesIO
 
-from mangum.exceptions import UnexpectedMessage
-from mangum.types import ASGI, Message, Response, Scope
+from ..exceptions import UnexpectedMessage
+from ..types import ASGI, Message, Response, Scope
 
 
 class HTTPCycleState(enum.Enum):

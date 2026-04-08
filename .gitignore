@@ -13,6 +13,8 @@ frontend/dist/
 
 # Logs
 *.log
+backend/*.out
+backend/*.err
 
 # OS files
 .DS_Store
