@@ -224,44 +224,57 @@ function normalizeText(value) {
   return `${value || ""}`.trim().toLowerCase()
 }
 
-function pickBestTeamMatch(teams, query) {
+function scoreTeamMatch(team, query) {
   const normalizedQuery = normalizeText(query)
   const normalizedWords = normalizedQuery.split(/\s+/).filter(Boolean)
+  if (!normalizedQuery) return -1
+
+  const name = normalizeText(team.strTeam)
+  const alternate = normalizeText(team.strAlternate)
+  const league = normalizeText(team.strLeague)
+  const sport = normalizeText(team.strSport)
+
+  let score = 0
+
+  if (name === normalizedQuery || alternate === normalizedQuery) {
+    score += 100
+  }
+
+  if (name.includes(normalizedQuery) || alternate.includes(normalizedQuery)) {
+    score += 50
+  }
+
+  normalizedWords.forEach((word) => {
+    if (name.includes(word)) score += 15
+    if (alternate.includes(word)) score += 10
+    if (league.includes(word)) score += 4
+    if (sport.includes(word)) score += 3
+  })
+
+  if (team.strBadge) score += 2
+  if (team.strLeague) score += 1
+
+  return score
+}
+
+function sortTeamsByMatch(teams, query) {
+  return [...(teams || [])]
+    .map((team) => ({ team, score: scoreTeamMatch(team, query) }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ team }) => team)
+}
+
+function pickBestTeamMatch(teams, query) {
+  const normalizedQuery = normalizeText(query)
 
   if (!teams?.length || !normalizedQuery) {
     return null
   }
 
-  const scoredTeams = teams.map((team) => {
-    const name = normalizeText(team.strTeam)
-    const alternate = normalizeText(team.strAlternate)
-    const league = normalizeText(team.strLeague)
-    const sport = normalizeText(team.strSport)
-
-    let score = 0
-
-    if (name === normalizedQuery || alternate === normalizedQuery) {
-      score += 100
-    }
-
-    if (name.includes(normalizedQuery) || alternate.includes(normalizedQuery)) {
-      score += 50
-    }
-
-    normalizedWords.forEach((word) => {
-      if (name.includes(word)) score += 15
-      if (alternate.includes(word)) score += 10
-      if (league.includes(word)) score += 4
-      if (sport.includes(word)) score += 3
-    })
-
-    if (team.strBadge) score += 2
-    if (team.strLeague) score += 1
-
-    return { team, score }
-  })
-
-  scoredTeams.sort((a, b) => b.score - a.score)
+  const scoredTeams = sortTeamsByMatch(teams, query).map((team) => ({
+    team,
+    score: scoreTeamMatch(team, query),
+  }))
   return scoredTeams[0]?.team || null
 }
 
@@ -309,8 +322,19 @@ export default function Search() {
     if (!team.trim()) return
 
     try {
-      const teams = await fetchTeamsForQuery(team)
-      setData({ teams })
+      const normalizedQuery = normalizeText(team)
+      const lastWord = normalizedQuery.split(/\s+/).filter(Boolean).pop()
+      const aliasQuery = TEAM_ALIASES[normalizedQuery] || (lastWord ? TEAM_ALIASES[lastWord] : "")
+      const searchAttempts = [...new Set([aliasQuery, team].filter(Boolean))]
+
+      let combinedTeams = []
+      for (const attempt of searchAttempts) {
+        const teams = await fetchTeamsForQuery(attempt)
+        combinedTeams = combinedTeams.concat(teams)
+      }
+
+      const sortedTeams = sortTeamsByMatch(combinedTeams, aliasQuery || team)
+      setData({ teams: sortedTeams })
       setInsights({})
     } catch (err) {
       console.error("Search error:", err)

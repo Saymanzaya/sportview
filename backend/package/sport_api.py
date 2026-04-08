@@ -4,6 +4,13 @@ session = requests.Session()
 session.trust_env = False
 
 
+def _safe_json(response, default):
+    try:
+        return response.json()
+    except ValueError:
+        return default
+
+
 def search_team(name: str):
     url = "https://www.thesportsdb.com/api/v1/json/3/searchteams.php"
     params = {"t": name}
@@ -62,9 +69,9 @@ def get_team_details(team_id: str):
     )
     events_response.raise_for_status()
 
-    team_payload = team_response.json()
-    players_payload = players_response.json()
-    events_payload = events_response.json()
+    team_payload = _safe_json(team_response, {"teams": []})
+    players_payload = _safe_json(players_response, {"player": []})
+    events_payload = _safe_json(events_response, {"results": []})
     team = (team_payload.get("teams") or [None])[0]
 
     team_name = team.get("strTeam") if team else None
@@ -77,7 +84,7 @@ def get_team_details(team_id: str):
             timeout=15,
         )
         search_players_response.raise_for_status()
-        search_players_payload = search_players_response.json()
+        search_players_payload = _safe_json(search_players_response, {"player": []})
 
     return {
         "team": team,

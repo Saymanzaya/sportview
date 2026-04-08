@@ -5,6 +5,30 @@ const API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://akv6kx5991.execute-api.us-east-1.amazonaws.com/prod"
 
+function normalizeTeamName(value) {
+  return `${value || ""}`
+    .toLowerCase()
+    .replace(/football club|fc|afc|cf|sc/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function teamsLookLikeMatch(left, right) {
+  const normalizedLeft = normalizeTeamName(left)
+  const normalizedRight = normalizeTeamName(right)
+
+  if (!normalizedLeft || !normalizedRight) {
+    return false
+  }
+
+  return (
+    normalizedLeft === normalizedRight ||
+    normalizedLeft.includes(normalizedRight) ||
+    normalizedRight.includes(normalizedLeft)
+  )
+}
+
 function InfoCard({ label, value }) {
   return (
     <div
@@ -48,6 +72,55 @@ export default function TeamDetails() {
   const [selectedPlayer, setSelectedPlayer] = useState(null)
 
   useEffect(() => {
+    async function loadFallbackPlayers(teamName) {
+      const lookupPlayers = []
+      let searchPlayers = []
+
+      try {
+        const fallbackResponse = await fetch(
+          `https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${teamId}`,
+        )
+        const fallbackPayload = await fallbackResponse.json()
+        lookupPlayers.push(...(fallbackPayload.player || []))
+      } catch (fallbackLookupError) {
+        console.error("Fallback player lookup error:", fallbackLookupError)
+      }
+
+      try {
+        const searchPlayersResponse = await fetch(
+          `https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?t=${encodeURIComponent(teamName || "")}`,
+        )
+        const searchPlayersPayload = await searchPlayersResponse.json()
+        searchPlayers = searchPlayersPayload.player || []
+      } catch (searchPlayersError) {
+        console.error("Fallback search players error:", searchPlayersError)
+      }
+
+      const mergedPlayers = [...lookupPlayers, ...searchPlayers].reduce((acc, player) => {
+        const key = player.idPlayer || player.strPlayer
+        if (!key) return acc
+
+        const existing = acc[key] || {}
+        acc[key] = {
+          ...existing,
+          ...Object.fromEntries(
+            Object.entries(player).filter(([, value]) => value !== null && value !== ""),
+          ),
+        }
+        return acc
+      }, {})
+
+      const normalizedPlayers = Object.values(mergedPlayers).sort((a, b) =>
+        (a.strPlayer || "").localeCompare(b.strPlayer || ""),
+      )
+
+      setPlayers(normalizedPlayers)
+
+      if (!normalizedPlayers.length) {
+        setNotice("Team info loaded. Player details are limited for this team right now.")
+      }
+    }
+
     async function loadTeamDetails() {
       setLoading(true)
       setError("")
@@ -61,7 +134,21 @@ export default function TeamDetails() {
           throw new Error(payload.detail || "Unable to load team details.")
         }
 
-        setTeam(payload.team || location.state?.team || null)
+        const clickedTeam = location.state?.team || null
+        const payloadTeam = payload.team || null
+
+        if (
+          clickedTeam &&
+          payloadTeam &&
+          !teamsLookLikeMatch(clickedTeam.strTeam, payloadTeam.strTeam)
+        ) {
+          setTeam(clickedTeam)
+          setRecentEvents([])
+          await loadFallbackPlayers(clickedTeam.strTeam)
+          return
+        }
+
+        setTeam(payloadTeam || clickedTeam || null)
         setPlayers(payload.players || [])
         setRecentEvents(payload.recent_events || [])
       } catch (err) {
@@ -69,53 +156,7 @@ export default function TeamDetails() {
         if (location.state?.team) {
           setTeam(location.state.team)
           setRecentEvents([])
-
-          try {
-            const fallbackResponse = await fetch(
-              `https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${teamId}`,
-            )
-            const fallbackPayload = await fallbackResponse.json()
-            const lookupPlayers = fallbackPayload.player || []
-            let searchPlayers = []
-
-            try {
-              const searchPlayersResponse = await fetch(
-                `https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?t=${encodeURIComponent(location.state.team.strTeam || "")}`,
-              )
-              const searchPlayersPayload = await searchPlayersResponse.json()
-              searchPlayers = searchPlayersPayload.player || []
-            } catch (searchPlayersError) {
-              console.error("Fallback search players error:", searchPlayersError)
-            }
-
-            const mergedPlayers = [...lookupPlayers, ...searchPlayers].reduce((acc, player) => {
-              const key = player.idPlayer || player.strPlayer
-              if (!key) return acc
-
-              const existing = acc[key] || {}
-              acc[key] = {
-                ...existing,
-                ...Object.fromEntries(
-                  Object.entries(player).filter(([, value]) => value !== null && value !== ""),
-                ),
-              }
-              return acc
-            }, {})
-
-            setPlayers(
-              Object.values(mergedPlayers).sort((a, b) =>
-                (a.strPlayer || "").localeCompare(b.strPlayer || ""),
-              ),
-            )
-
-            if (!lookupPlayers.length && !searchPlayers.length) {
-              setNotice("Team info loaded. Player details are limited for this team right now.")
-            }
-          } catch (fallbackError) {
-            console.error("Fallback player lookup error:", fallbackError)
-            setPlayers([])
-            setNotice("Team info loaded. Live player details are not available right now.")
-          }
+          await loadFallbackPlayers(location.state.team.strTeam)
         } else {
           setError(err.message || "Unable to load team details.")
         }

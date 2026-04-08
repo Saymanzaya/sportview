@@ -156,6 +156,70 @@ function pickFeaturedEvents(count = 3) {
   return shuffled.slice(0, count)
 }
 
+function deriveMatchupDetails(event) {
+  const attractions = event?._embedded?.attractions || []
+  const attractionNames = attractions
+    .map((item) => item?.name)
+    .filter(Boolean)
+
+  if (attractionNames.length >= 2) {
+    return {
+      homeTeam: attractionNames[0],
+      awayTeam: attractionNames[1],
+    }
+  }
+
+  const eventName = event?.name || ""
+  if (eventName.includes(" vs ")) {
+    const [homeTeam, awayTeam] = eventName.split(" vs ")
+    return { homeTeam, awayTeam }
+  }
+
+  if (eventName.includes(" at ")) {
+    const [awayTeam, homeTeam] = eventName.split(" at ")
+    return { homeTeam, awayTeam }
+  }
+
+  return {
+    homeTeam: attractionNames[0] || eventName,
+    awayTeam: attractionNames[1] || "",
+  }
+}
+
+function normalizeTicketEvent(event) {
+  if (event?.idEvent || event?.strEvent) {
+    return event
+  }
+
+  const venue = event?._embedded?.venues?.[0]
+  const images = event?.images || []
+  const largeImage =
+    images.find((image) => image?.ratio === "16_9") ||
+    images.find((image) => image?.ratio === "4_3") ||
+    images[0]
+  const { homeTeam, awayTeam } = deriveMatchupDetails(event)
+  const localDate = event?.dates?.start?.localDate || ""
+  const localTime = event?.dates?.start?.localTime || ""
+  const segment = event?.classifications?.[0]?.segment?.name
+  const genre = event?.classifications?.[0]?.genre?.name
+  const subGenre = event?.classifications?.[0]?.subGenre?.name
+  const league = [segment, genre, subGenre].filter(Boolean).join(" / ")
+
+  return {
+    idEvent: event?.id || event?.url || event?.name,
+    strEvent: event?.name || `${homeTeam} vs ${awayTeam}`.trim(),
+    strHomeTeam: homeTeam || "Event",
+    strAwayTeam: awayTeam,
+    dateEvent: localDate,
+    strTime: localTime,
+    strVenue: venue?.name || "Venue TBA",
+    strLeague: league || "Live Event",
+    strThumb: largeImage?.url || "",
+    strTicketURL: event?.url || "",
+    _rawTicketmasterEvent: event,
+  }
+}
+
 function getVenueLink(event) {
   const venueQuery = `${event.strVenue || "stadium"} ${event.strHomeTeam || ""} ${event.strAwayTeam || ""}`.trim()
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueQuery)}`
@@ -246,6 +310,32 @@ export default function Tickets() {
     }
   })
 
+  async function runTicketSearch(searchTerm) {
+    const normalizedQuery = searchTerm.trim()
+    if (!normalizedQuery) return
+
+    setSearchError("")
+    setRecommendations({})
+    setData(null)
+    setHasSearched(true)
+    setQuery(normalizedQuery)
+
+    try {
+      const r = await fetch(`${API_BASE}/tickets?q=${encodeURIComponent(normalizedQuery)}`)
+      if (!r.ok) {
+        const errorBody = await r.json().catch(() => ({}))
+        throw new Error(errorBody.detail || errorBody.error || "Error loading tickets.")
+      }
+      const j = await r.json()
+      setData(j)
+      saveRecentSearch(normalizedQuery)
+    } catch (error) {
+      console.error("Ticket search error:", error)
+      setSearchError(error.message || "Error loading tickets.")
+      setData(null)
+    }
+  }
+
   function saveRecentSearch(searchTerm) {
     const normalized = searchTerm.trim()
     if (!normalized) return
@@ -259,27 +349,7 @@ export default function Tickets() {
   }
 
   async function searchTickets() {
-    if (!query.trim()) return
-
-    setSearchError("")
-    setRecommendations({})
-    setData(null)
-    setHasSearched(true)
-
-    try {
-      const r = await fetch(`${API_BASE}/tickets?q=${encodeURIComponent(query)}`)
-      if (!r.ok) {
-        const errorBody = await r.json().catch(() => ({}))
-        throw new Error(errorBody.detail || errorBody.error || "Error loading tickets.")
-      }
-      const j = await r.json()
-      setData(j)
-      saveRecentSearch(query)
-    } catch (error) {
-      console.error("Ticket search error:", error)
-      setSearchError(error.message || "Error loading tickets.")
-      setData(null)
-    }
+    await runTicketSearch(query)
   }
 
   function showFeaturedGames() {
@@ -349,22 +419,13 @@ export default function Tickets() {
     }
   }
 
-  const allEvents = data?.event || data?.events || []
+  const allEvents = (data?.event || data?.events || []).map(normalizeTicketEvent)
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const events = allEvents
-    .filter((event) => {
-      if (!event.dateEvent) return false
-      const eventDate = new Date(`${event.dateEvent}T00:00:00`)
-      return eventDate >= today
-    })
-    .sort((a, b) => {
-      const dateA = new Date(`${a.dateEvent}T00:00:00`)
-      const dateB = new Date(`${b.dateEvent}T00:00:00`)
-      return dateA - dateB
-    })
+  const events = [...allEvents].sort((a, b) => {
+    const dateA = new Date(`${a.dateEvent || "9999-12-31"}T00:00:00`)
+    const dateB = new Date(`${b.dateEvent || "9999-12-31"}T00:00:00`)
+    return dateA - dateB
+  })
 
   function renderEventCard(event, sectionLabel = "") {
     const recommendation = recommendations[event.idEvent]
@@ -454,7 +515,9 @@ export default function Tickets() {
         <h3>{event.strEvent}</h3>
 
         <p style={{ color: "#555" }}>
-          {event.strHomeTeam} vs {event.strAwayTeam}
+          {event.strAwayTeam
+            ? `${event.strHomeTeam} vs ${event.strAwayTeam}`
+            : event.strHomeTeam}
         </p>
 
         <p>
@@ -582,14 +645,7 @@ export default function Tickets() {
             {recentSearches.map((searchTerm) => (
               <button
                 key={searchTerm}
-                onClick={() => {
-                  setQuery(searchTerm)
-                  setTimeout(() => {
-                    const event = { target: { value: searchTerm } }
-                    void event
-                    searchTickets()
-                  }, 0)
-                }}
+                onClick={() => void runTicketSearch(searchTerm)}
                 style={{
                   padding: "10px 14px",
                   borderRadius: 999,
@@ -640,7 +696,7 @@ export default function Tickets() {
       )}
 
       {data && events.length === 0 && !searchError && (
-        <p style={{ marginTop: 20 }}>No upcoming ticket results found.</p>
+        <p style={{ marginTop: 20 }}>No ticket results found.</p>
       )}
 
       {events.length > 0 && (
