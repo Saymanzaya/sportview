@@ -2,41 +2,6 @@ locals {
   function_name = "${var.project_name}-${var.environment}-backend"
 }
 
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  output_path = "${path.module}/sportview_lambda.zip"
-
-  source {
-    content  = file("${path.module}/../backend/package/main.py")
-    filename = "package/main.py"
-  }
-
-  source {
-    content  = file("${path.module}/../backend/package/lambda_handler.py")
-    filename = "package/lambda_handler.py"
-  }
-
-  source {
-    content  = file("${path.module}/../backend/package/sport_api.py")
-    filename = "package/sport_api.py"
-  }
-
-  source {
-    content  = file("${path.module}/../backend/package/ticket_api.py")
-    filename = "package/ticket_api.py"
-  }
-
-  source {
-    content  = file("${path.module}/../backend/llm_service.py")
-    filename = "llm_service.py"
-  }
-
-  source {
-    content  = file("${path.module}/../backend/prompt_builder.py")
-    filename = "prompt_builder.py"
-  }
-}
-
 resource "aws_iam_role" "lambda_exec_role" {
   name = "${local.function_name}-role"
 
@@ -64,8 +29,8 @@ resource "aws_lambda_function" "backend" {
   role             = aws_iam_role.lambda_exec_role.arn
   handler          = "package.lambda_handler.handler"
   runtime          = "python3.12"
-  filename         = data.archive_file.lambda_zip.output_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  filename         = "${path.module}/lambda_build.zip"
+  source_code_hash = filebase64sha256("${path.module}/lambda_build.zip")
   timeout          = 30
   memory_size      = 512
 

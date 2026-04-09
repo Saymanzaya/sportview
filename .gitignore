@@ -22,3 +22,7 @@ Thumbs.db
 
 # VS Code
 .vscode/
+
+# keep generated build files out of git
+infra/lambda_build.zip
+lambda_build/
