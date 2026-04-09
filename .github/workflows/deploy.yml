@@ -65,7 +65,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-1
-          TF_VAR_ticketmaster_api_key: ${{ secrets.TICKETMASTER_API_KEY }}
+          TF_VAR_ticketmaster_key: ${{ secrets.TICKETMASTER_KEY }}
           TF_VAR_sportsdb_api_key: ${{ secrets.SPORTSDB_API_KEY }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_cors_origins: "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com"
@@ -77,7 +77,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-1
-          TF_VAR_ticketmaster_api_key: ${{ secrets.TICKETMASTER_API_KEY }}
+          TF_VAR_ticketmaster_key: ${{ secrets.TICKETMASTER_KEY }}
           TF_VAR_sportsdb_api_key: ${{ secrets.SPORTSDB_API_KEY }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_cors_origins: "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com"

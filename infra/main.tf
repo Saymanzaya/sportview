@@ -36,7 +36,7 @@ resource "aws_lambda_function" "backend" {
 
   environment {
     variables = {
-      TICKETMASTER_API_KEY = var.ticketmaster_api_key
+      TICKETMASTER_KEY = var.ticketmaster_key
       SPORTSDB_API_KEY     = var.sportsdb_api_key
       OPENAI_API_KEY       = var.openai_api_key
       CORS_ORIGINS         = var.cors_origins

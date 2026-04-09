@@ -16,7 +16,7 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "ticketmaster_api_key" {
+variable "ticketmaster_key" {
   description = "Ticketmaster API key"
   type        = string
   sensitive   = true
