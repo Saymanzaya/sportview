@@ -1,0 +1,56 @@
+name: Deploy SportView Backend
+
+on:
+  push:
+    branches: [ main, m5-cicd ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init
+
+      - name: Terraform plan
+        working-directory: infra
+        env:
+          TF_VAR_ticketmaster_api_key: ${{ secrets.TICKETMASTER_API_KEY }}
+          TF_VAR_sportsdb_api_key: ${{ secrets.SPORTSDB_API_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_cors_origins: "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com"
+        run: terraform plan
+
+      - name: Terraform apply
+        working-directory: infra
+        env:
+          TF_VAR_ticketmaster_api_key: ${{ secrets.TICKETMASTER_API_KEY }}
+          TF_VAR_sportsdb_api_key: ${{ secrets.SPORTSDB_API_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_cors_origins: "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com"
+        run: terraform apply -auto-approve
