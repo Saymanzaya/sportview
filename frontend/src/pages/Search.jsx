@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
-  "https://akv6kx5991.execute-api.us-east-1.amazonaws.com/prod"
+  "https://4biuo6qyb2.execute-api.us-east-1.amazonaws.com/prod"
 
 const TEAM_ALIASES = {
   raiders: "Las Vegas Raiders",
@@ -150,7 +150,6 @@ function TeamCard({ team, insight, loadingId, onInsight }) {
           }}
         >
           <h3 style={{ marginBottom: 10 }}>AI Team Insight</h3>
-
           <p style={{ whiteSpace: "pre-line", lineHeight: "1.6" }}>{insight}</p>
         </div>
       )}
@@ -278,6 +277,16 @@ function pickBestTeamMatch(teams, query) {
   return scoredTeams[0]?.team || null
 }
 
+function dedupeTeamsById(teams) {
+  const seen = new Set()
+  return (teams || []).filter((team) => {
+    const id = team?.idTeam
+    if (!id || seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+}
+
 async function fetchTeamsForQuery(query) {
   const response = await fetch(`${API_BASE}/sports?q=${encodeURIComponent(query)}`)
   const payload = await response.json()
@@ -305,7 +314,7 @@ async function resolveComparisonTeam(query) {
     combinedTeams = combinedTeams.concat(teams)
   }
 
-  return pickBestTeamMatch(combinedTeams, query)
+  return pickBestTeamMatch(dedupeTeamsById(combinedTeams), query)
 }
 
 export default function Search() {
@@ -322,9 +331,14 @@ export default function Search() {
     if (!team.trim()) return
 
     try {
+      setData({ teams: [] })
+      setInsights({})
+
       const normalizedQuery = normalizeText(team)
       const lastWord = normalizedQuery.split(/\s+/).filter(Boolean).pop()
-      const aliasQuery = TEAM_ALIASES[normalizedQuery] || (lastWord ? TEAM_ALIASES[lastWord] : "")
+      const aliasQuery =
+        TEAM_ALIASES[normalizedQuery] || (lastWord ? TEAM_ALIASES[lastWord] : "")
+
       const searchAttempts = [...new Set([aliasQuery, team].filter(Boolean))]
 
       let combinedTeams = []
@@ -333,11 +347,13 @@ export default function Search() {
         combinedTeams = combinedTeams.concat(teams)
       }
 
-      const sortedTeams = sortTeamsByMatch(combinedTeams, aliasQuery || team)
+      const uniqueTeams = dedupeTeamsById(combinedTeams)
+      const sortedTeams = sortTeamsByMatch(uniqueTeams, aliasQuery || team)
+
       setData({ teams: sortedTeams })
-      setInsights({})
     } catch (err) {
       console.error("Search error:", err)
+      setData({ teams: [] })
     }
   }
 
