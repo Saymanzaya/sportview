@@ -86,5 +86,5 @@ jobs:
           TF_VAR_ticketmaster_key: ${{ secrets.TICKETMASTER_KEY }}
           TF_VAR_sportsdb_api_key: ${{ secrets.SPORTSDB_API_KEY }}
           TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
-          TF_VAR_cors_origins: "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com"
+          TF_VAR_cors_origins: "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com,https://main.d2v88ed3avlk1m.amplifyapp.com"
         run: terraform apply -auto-approve
