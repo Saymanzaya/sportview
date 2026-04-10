@@ -38,5 +38,5 @@ variable "openai_api_key" {
 variable "cors_origins" {
   description = "Allowed CORS origins"
   type        = string
-  default     = "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com"
+  default = "http://localhost:5173,https://zayab.d1ngwykof7h55j.amplifyapp.com,https://main.d2v88ed3avlk1m.amplifyapp.com"
 }
