@@ -2,7 +2,7 @@ name: Deploy SportView Backend
 
 on:
   push:
-    branches: [main, m5-cicd, repo-cleanup-2]
+    branches: [main, m5-cicd, sportview-final]
   workflow_dispatch:
 
 jobs:
