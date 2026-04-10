@@ -27,7 +27,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 resource "aws_lambda_function" "backend" {
   function_name    = local.function_name
   role             = aws_iam_role.lambda_exec_role.arn
-  handler          = "package.lambda_handler.handler"
+  handler          = "app.lambda_handler.handler"
   runtime          = "python3.12"
   filename         = "${path.module}/lambda_build.zip"
   source_code_hash = filebase64sha256("${path.module}/lambda_build.zip")

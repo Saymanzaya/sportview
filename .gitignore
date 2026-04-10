@@ -1,28 +1,34 @@
-# Python virtual envs
-.venv/
-backend/.venv/
+# build artifacts
+infra/lambda_build.zip
+lambda_build/
+backend/*.zip
+
+# archive/build folders
+backend/.aws_zip_build/
+backend/.zip_staging/
+
+# zip/build artifacts
+*.zip
+archive/**/*.zip
+layer/python.zip
+infra/lambda_build.zip
+lambda_build/
+
+# old build folders
+backend/.aws_zip_build/
+backend/.zip_staging/
+
+# OS/editor
+.DS_Store
+.vscode/
+
+# Python
 __pycache__/
 *.pyc
 
-# Env keys
-.env
-
-# Node
+# frontend
 frontend/node_modules/
 frontend/dist/
 
-# Logs
-*.log
-backend/*.out
-backend/*.err
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# VS Code
-.vscode/
-
-# keep generated build files out of git
-infra/lambda_build.zip
-lambda_build/
+# secrets
+.env

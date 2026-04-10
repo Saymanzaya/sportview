@@ -38,16 +38,18 @@ jobs:
       - name: Build Lambda package
         run: |
           rm -rf lambda_build
-          mkdir -p lambda_build/package
+          rm -f infra/lambda_build.zip
+          mkdir -p lambda_build/app
 
           pip install -r backend/requirements.txt -t lambda_build
 
-          cp backend/package/main.py lambda_build/package/
-          cp backend/package/lambda_handler.py lambda_build/package/
-          cp backend/package/sport_api.py lambda_build/package/
-          cp backend/package/ticket_api.py lambda_build/package/
-          cp backend/llm_service.py lambda_build/
-          cp backend/prompt_builder.py lambda_build/
+          cp backend/app/__init__.py lambda_build/app/
+          cp backend/app/main.py lambda_build/app/
+          cp backend/app/lambda_handler.py lambda_build/app/
+          cp backend/app/sport_api.py lambda_build/app/
+          cp backend/app/ticket_api.py lambda_build/app/
+          cp backend/app/llm_service.py lambda_build/app/
+          cp backend/app/prompt_builder.py lambda_build/app/
 
           cd lambda_build
           zip -r ../infra/lambda_build.zip .
