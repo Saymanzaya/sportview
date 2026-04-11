@@ -1,6 +1,6 @@
 SportView: Sports & Ticketing App
-Overview
-SportView is an API-driven web application that allows users to search for sports teams, explore upcoming events, and receive AI-powered insights and ticket recommendations. The application integrates real-time sports data with AI recommendations to enhance the user’s experience
+Overview:
+SportView is a full stack API-driven web application that allows users to search for sports teams, view team details and recent events, explore upcoming events and ticket availability, compare teams side by side, view featured sports event, and receive AI-powered insights and ticket recommendations. The application integrates real-time sports data with AI recommendations to enhance the user’s experience
 
 Objectives
 •	Provide real-time sports team and event data
@@ -9,65 +9,53 @@ Objectives
 •	Offer intelligent ticket recommendations based on user preferences
 
 System Architecture
-User (Browser)  
-Frontend (React - AWS Amplify) 
-API Gateway (HTTP API) 
-AWS Lambda (Python Backend) 
+Frontend: React (AWS Amplify)
+Backend: FastAPI (AWS Lambda via Mangum)
+API Layer: Amazon API Gateway (HTTP API)
+Infrastructure: Terraform (Infrastructure as Code)
+CI/CD: GitHub Actions
+State Management: S3 (Terraform remote state)
+
 External APIs:
-   - Ticketmaster API
-   - TheSportsDB API
-   - OpenAI API
+TheSportsDB (sports data)
+Ticketmaster (events & tickets)
+OpenAI (AI insights)
+
+CI/CD Pipeline:
+The project uses GitHub Actions to automate deployment:
+Builds the frontend (React)
+Packages the backend (Lambda)
+Run Terraform:
+  terraform init
+  terraform plan
+  terraform apply
+This ensures every push automatically updates the system.
+
+Live Application:
+Frontend: https://main.d2v88ed3avlk1m.amplifyapp.com
+Backend: https://4biuo6qyb2.execute-api.us-east-1.amazonaws.com/prod
 
 Application Workflow
 1.	User interacts with the frontend (search for team)
 2.	React frontend sends a request to API Gateway
-3.	API Gateway routes the request to AWS Lambda
+3.	API Gateway Invokes AWS Lambda
 4.	Lambda processes the request:
-o	Pulls sports data from TheSportsDB
-o	Pulls ticket data from Ticketmaster API
-o	Generates AI responses using OpenAI API
+    • Pulls sports data from TheSportsDB
+    • Pulls ticket data from Ticketmaster API
+    • Generates AI responses using OpenAI API
 5.	Lambda returns a JSON response
-6.	Frontend displays results dynamically
+6.	Frontend displays results 
 
 LLM Workflow
-1.	Frontend sends user context (team, event, preferences) 
+1.	Frontend sends a request (/game-insight or /ticket-recommendation) 
 2.	Lambda builds a structured prompt 
 3.	Lambda sends request to OpenAI API 
 4.	OpenAI generates: 
-o	Team insights 
-o	Ticket recommendations 
+      Team insights 
+      Ticket recommendations 
 5.	Response is returned to frontend
 
-LLM Flow – Sport example
-1.	User selects "AI Team Insight"
-2.	Frontend sends POST request (/game-insight)
-3.	API Gateway receives request
-4.	API Gateway triggers AWS Lambda
-5.	Lambda processes input and builds prompt
-6.	Lambda sends request to OpenAI API
-7.	OpenAI API generates response
-8.	Lambda returns JSON response
-9.	Frontend renders AI-generated insight
-
-Technologies Used
-Frontend
-•	React
-•	JavaScript
-•	CSS
-Backend
-•	Python (AWS Lambda)
-•	RESTful API design
-Cloud Services
-•	AWS Amplify (Frontend Hosting)
-•	AWS API Gateway
-•	AWS Lambda
-External APIs
-•	TheSportsDB (sports data)
-•	Ticketmaster API (Ticket information/purchasing)
-•	OpenAI API (AI insights & recommendations)
-
-API Endpoints
-
+API Endpoints:
 GET /sports
 Search for teams
 /sports?q=Lions
@@ -104,7 +92,10 @@ Request Body:
 
 Environment Variables
 The following environment variable must be configured in AWS Lambda:
-OPENAI_API_KEY=API KEY GOES HERE
+OPENAI_API_KEY
+TICKETMASTER_KEY
+SPORTSDB_API_KEY
+CORS_ORIGINS
 
 Deployment
 Frontend
@@ -112,6 +103,7 @@ Frontend
 •	Automatically deploys from GitHub repository
 Backend
 •	Deployed using AWS Lambda
+• Managed with Terraform
 •	API exposed via AWS API Gateway
 
 Challenges & Solutions
@@ -120,12 +112,18 @@ Issue: OpenAI dependency errors in Lambda
 •	Solution: Replaced OpenAI SDK with direct HTTP requests using requests
 Issue: CORS errors
 •	Cause: API Gateway not configured for cross-origin requests
-•	Solution: Enabled CORS with:
-o	Access-Control-Allow-Origin: *
-o	Disabled credentials
+•	Solution: Enabled CORS with: Access-Control-Allow-Origin: * and Disabled credentials
+• Cause: Frontend and backend on different domains
+• Solution: Enabled CORS and configured allowed origins
 Issue: Frontend not connecting to backend
 •	Cause: Using localhost URLs
 •	Solution: Updated to deployed API Gateway URL
+Issue: CI/CD Deployment Errors
+• Cause: Incorrect file paths and packaging
+• Solution: Fixed GitHub Actions workflow and Lambda build process
+Issue: API Integration Issues
+• Cause: Inconsistent external API responses
+• Solution: Added filtering and error handling
 Future Improvements
 •	User authentication and profiles
 •	Personalized recommendations
